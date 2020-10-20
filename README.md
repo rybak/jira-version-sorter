@@ -1,6 +1,13 @@
 # JIRA version sorter
 
-Python script to sort JIRA versions. Tested only on JIRA server v7.1.6.
+Python script to sort JIRA versions.  Sorts only numerical versions, separated
+by periods.  Two-part and three-part versioning schemes are supported.  Examples
+of supported JIRA version names:
+
+- 100.42
+- 2020.77.256
+
+Tested only on JIRA server v7.1.6.
 
 ## Prerequisites
 - python3
