@@ -10,10 +10,10 @@ of supported JIRA version names:
 Tested only on JIRA server v7.1.6.
 
 ## Prerequisites
-- python3
-- pip3 package `requests` is installed
-- Your JIRA account has permission to edit JIRA versions
-- You have a certificat file, needed to access the JIRA website.
+- python3 is installed.
+- pip3 package `requests` is installed.
+- Your JIRA account has permission to edit JIRA versions.
+- You have a certificate file, needed to access the JIRA website.
 
 ## Usage
 1. Manually make sure that all first builds (".0" at the end) are positioned
