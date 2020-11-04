@@ -59,10 +59,7 @@ def get_versions_url(project_key: str) -> str:
 
 
 # main methods
-cache={}
 def download_versions(project_key: str):
-    if project_key in cache:
-        return cache[project_key]
     versions_url = get_versions_url(project_key)
     while True:
         try:
@@ -84,7 +81,6 @@ def download_versions(project_key: str):
                     print("No project {}".format(project_key))
                     return None
             else:
-                cache[project_key] = r.json()
                 return r.json()
         except requests.exceptions.ConnectionError as ce:
             print("Connection error: {}".format(ce))
@@ -96,6 +92,7 @@ def download_versions(project_key: str):
 
 # https://docs.atlassian.com/software/jira/docs/api/REST/7.1.6/#api/2/version-moveVersion
 def move_version(to_move, prev):
+    print("Moving {} to be after {}".format(to_move['name'], prev['name']))
     move_url = '{}/rest/api/2/version/{}/move'.format(config.jira_url, to_move['id'])
     init_session()
     r = rest_session.post(move_url, json={
@@ -167,46 +164,70 @@ def dict_versions(vs):
     return { v['name'].strip(): v for v in vs }
 
 
+def parse_name(n):
+    return list(map(int, n.split('.')))
+
+
+# returns 'name' of the version, that should be previous to `n` in a lineage
+def get_shoud_prev(n, format_version):
+    p = parse_name(n)
+    p[-1] = p[-1] - 1  # just decrement the last component
+    return format_version(tuple(p))
+
+
 def clean_up_release(key, major_versions, version_part_scheme=3):
     vs = download_versions(key)
-    m = dict_versions(vs)
     for v in vs:
         if v['name'].split('.') == version_part_scheme and ' ' in v['name']:
             print("WARNING: probable typo in version name '{}'".format(v['name']))
-    names = [v['name'] for v in vs]
-
-
-    release_ns = list(filter(lambda v: extact_major(v, version_part_scheme) in major_versions, names))
-
-    # sort as tuples to avoid lexicographic order
-    parsed = sorted([tuple(map(int, n.split('.'))) for n in release_ns])
 
     def format_three(p):
         return '{}.{}.{}'.format(p[0], p[1], p[2])
     def format_two(p):
         return '{}.{}'.format(p[0], p[1])
+
     format_version = None
+    format_lineage_prefix = None
     if version_part_scheme == 3:
         format_version = format_three
+        format_lineage_prefix = format_two
     elif version_part_scheme == 2:
         format_version = format_two
-    sorted_ns = list(map(format_version, parsed))
-    moved_counter = 0
-    for (ovn, nvn) in list(zip(sorted_ns, sorted_ns[1:])):
-        if not is_ordered(ovn, nvn, release_ns, version_part_scheme):
-            if nvn[-2:] == '.0':
-                print("Not moving a first build " + nvn)
+        format_lineage_prefix = lambda p: str(p[0])
+
+    m = dict_versions(vs)
+    names = [v['name'] for v in vs]
+    for major in major_versions:
+        major_prefix = str(major) + '.'
+        to_sort = filter(lambda n: n.startswith(major_prefix), names)
+        for n in to_sort:
+            if n[-2:] == '.0':
+                # in a lineage, there is no previous version for a zeroth version
                 continue
-            print(key + ": Moving " + nvn + " to be after " + ovn)
-            ov = m[ovn]
-            nv = m[nvn]
-            old_index = release_ns.index(ovn)
-            new_index = release_ns.index(nvn)
-            release_ns[old_index], release_ns[new_index] = release_ns[new_index], release_ns[old_index]
-            move_version(nv, ov)
-            moved_counter += 1
-    del cache[key]
-    return moved_counter
+            should_prev = get_shoud_prev(n, format_version)
+            try:
+                prev_idx = names.index(should_prev)
+                curr_idx = names.index(n)
+            except ValueError as e:
+                # if version that should be previous is missing for some reason, just ignore this
+                continue
+            if curr_idx != prev_idx + 1:
+                p = parse_name(n)
+                lineage_prefix = format_lineage_prefix(p)
+                major_release_names = list(filter(lambda n: n.startswith(lineage_prefix), names))
+                major_release_order = list(sorted(list(map(lambda n: tuple(parse_name(n)), major_release_names))))
+
+                moved_counter = 0
+                for (prev, curr) in list(zip(major_release_order, major_release_order[1:])):
+                    if curr[-1] == 0:
+                        continue
+                    curr_v = m[format_version(curr)]
+                    prev_v = m[format_version(prev)]
+                    move_version(curr_v, prev_v)
+                    moved_counter += 1
+                return moved_counter
+
+    return 0
 
 ret = 0
 while True:
