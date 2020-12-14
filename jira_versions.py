@@ -225,13 +225,18 @@ def clean_up_release(key, major_versions, version_part_scheme=3):
                     prev_v = m[format_version(prev)]
                     move_version(curr_v, prev_v)
                     moved_counter += 1
+                print("Project {}: moved {} versions in the lineage for major version {}".format(key,
+                    moved_counter, major))
                 return moved_counter
 
+    print("Project {}: nothing to move in versions {}".format(key, list(major_versions)))
     return 0
 
 ret = 0
 while True:
-    # ret = clean_up_release('BSERV', list(range(450, 500)), 2)
-    # ret = clean_up_release('TEST', list(range(1960, 1990)), 3)
+    ret = 0
+    # ret = ret + clean_up_release('BSERV', list(range(450, 500)), 2)
+    # ret = ret + clean_up_release('TEST', list(range(1960, 1990)), 3)
     if ret == 0:
+        print("No more versions to move.")
         break
