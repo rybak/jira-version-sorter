@@ -13,6 +13,7 @@ import config
 
 rest_session = requests.Session()
 auth = None
+DEBUG = False
 
 
 # REST boilerplate
@@ -179,6 +180,8 @@ def clean_up_release(key, major_versions, version_part_scheme=3):
     m = dict_versions(vs)
     names = [v['name'] for v in vs]
     for major in major_versions:
+        if DEBUG:
+            print("Checking version lineage {}".format(major))
         major_prefix = str(major) + '.'
         to_sort = filter(lambda n: n.startswith(major_prefix), names)
         for n in to_sort:
@@ -189,10 +192,14 @@ def clean_up_release(key, major_versions, version_part_scheme=3):
             try:
                 prev_idx = names.index(should_prev)
                 curr_idx = names.index(n)
+                if DEBUG:
+                    print("Checking order: {} should be before {}".format(should_prev, n))
+                    print("Indexes: {} ? {}".format(prev_idx, curr_idx))
             except ValueError as e:
                 # if version that should be previous is missing for some reason, just ignore this
                 continue
             if curr_idx != prev_idx + 1:
+                print("Version " + should_prev + " is not directly before " + n + ", which is incorrect")
                 p = parse_name(n)
                 lineage_prefix = format_lineage_prefix(p)
                 major_release_names = list(filter(lambda n: n.startswith(lineage_prefix), names))
