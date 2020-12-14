@@ -140,25 +140,6 @@ def extact_minor(n: str, version_part_scheme) -> int:
         return NON_NUMBER
 
 
-def is_ordered(v_old: str, v_new: str, vs, version_part_scheme):
-    try:
-        old_idx = vs.index(v_old)
-        new_idx = vs.index(v_new)
-        old_major = extact_major(v_old, version_part_scheme)
-        new_major = extact_major(v_new, version_part_scheme)
-        if old_major != new_major:
-            return old_idx < new_idx
-        if version_part_scheme == 3:
-            old_minor = extact_minor(v_old, version_part_scheme)
-            new_minor = extact_minor(v_new, version_part_scheme)
-            if old_minor != new_minor:
-                return old_idx < new_idx
-        return old_idx + 1 == new_idx
-    except Exception as e:
-        print("WARNING: could not find version in the list " + str(e))
-        return None
-
-
 def dict_versions(vs):
     # strip() is needed, because sometimes there are typos in versions
     return { v['name'].strip(): v for v in vs }
