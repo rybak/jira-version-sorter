@@ -147,6 +147,8 @@ def dict_versions(vs):
 
 
 def parse_name(n):
+    if '-' in n:
+        n = n.split('-')[0]
     return list(map(int, n.split('.')))
 
 
