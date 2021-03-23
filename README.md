@@ -1,11 +1,8 @@
 # JIRA version sorter
 
-Python script to sort JIRA versions.  Sorts only numerical versions, separated
-by periods.  Two-part and three-part versioning schemes are supported.  Examples
-of supported JIRA version names:
-
-- 100.42
-- 2020.77.256
+Python script to sort JIRA versions.  Sorts "lineages" of versions.  A lineage
+is defined by user-provided predicate on the `name` of the version.  The sorting
+is done using user-provided comparator.
 
 Tested only on JIRA server v7.1.6.
 
@@ -16,7 +13,7 @@ Tested only on JIRA server v7.1.6.
 - You have a certificate file, needed to access the JIRA website.
 
 ## Usage
-1. Manually make sure that all first builds (".0" at the end) are positioned
+1. Manually make sure that all first builds in a lineage are positioned
    properly.
 2. You have to provide file `config.py` with following properties:
    ```
